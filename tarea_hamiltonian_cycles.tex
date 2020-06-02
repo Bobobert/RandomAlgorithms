@@ -1,0 +1,145 @@
+% !TeX spellcheck = es_ANY
+\documentclass[12pt,letterpaper]{article}
+\usepackage{fullpage}
+\usepackage[utf8]{inputenc}
+\usepackage[top=2cm, bottom=4.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath,amsthm,amsfonts,amssymb,amscd}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{mathrsfs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{tikz} %Para automatas
+\usepackage{tikz-qtree}
+\usetikzlibrary{automata,positioning} %Para automatas
+\hypersetup{%
+  colorlinks=true,
+  linkcolor=blue,
+  linkbordercolor={0 0 1}
+}
+\renewcommand\lstlistingname{Algorithm}
+\renewcommand\lstlistlistingname{Algorithms}
+\def\lstlistingautorefname{Alg.}
+\lstdefinestyle{Python}{
+    language        = Python,
+    frame           = lines, 
+    basicstyle      = \footnotesize,
+    keywordstyle    = \color{blue},
+    stringstyle     = \color{green},
+    commentstyle    = \color{red}\ttfamily
+}
+\setlength{\parindent}{0.0in}
+\setlength{\parskip}{0.05in}
+% Edit these as appropriate
+\newcommand\course{Algoritmos aleatorios}
+\newcommand\hwnumber{5}                  % <-- homework number
+\newcommand\NetIDa{López Díaz Roberto Esteban}           % <-- NetID of person #1
+
+\pagestyle{fancyplain}
+\headheight 35pt
+\lhead{\NetIDa}
+%\lhead{\NetIDa\\\NetIDb}                 % <-- Comment this line out for problem sets (make sure you are person #1)
+\chead{\textbf{\Large Tarea \hwnumber}}
+\rhead{\course \\ \today}
+\lfoot{}
+\cfoot{}
+\rfoot{\small\thepage}
+\headsep 1.5em
+\newtheorem{theorem}{Teorema}
+\newtheorem{lemma}[theorem]{Lema}
+
+\begin{document}
+	\section*{Ciclos Hamiltonianos en grafos aleatorios}
+
+	El siguiente trabajo es para reforzar el planteamiento, desarrollo y demostración del algoritmo aleatorio para encontrar ciclos hamiltonianos en grafos aleatorios.
+    
+    Un ciclo hamiltoniano en un grafo es aquel conjunto de aristas que tiene como propiedad pasar por todos las vértices del grafo solo una vez.
+    
+    El problema de encontrar un ciclo hamiltoniano en grafos generales es un problema NP-Hard, pero para aquellos generados de una maneras aleatorias tal cómo con el método de Erdös-Rényi, y así quitando la clausula de una solución para todas las instancias en general cómo intercambio por tener una solución plausible, se pueden encontrar ciclos hamiltonianos en tiempos de ejecución con complejidad polinomial.
+    
+   Cómo principal mecanismo del algoritmo para encontrar los ciclos, es la rotación de la cabeza del camino actual que se tenga dentro de un grafo. Esto es, suponga un grafo simple $G$  con un camino simple $P = v_1, \dots , v_i, \dots, v_k$, donde el vértice $v_k$ es la denominada cabeza del camino se hace una rotación cuando la elección de la siguiente arista por el algoritmo tiene la forma $(v_k, v_i)$ la cual genera un ciclo con el camino ya encontrado. Resultando en una modificación para que la cabeza del grafo sea el vértice $v_{i+1}$, resultado en $P'=v_1,\dots,v_i, v_k, v_{k-1},\dots, v_{i+2}, v_{i+1}$ el cual también es un camino simple.
+   
+   Para el siguiente algoritmo se presenta desde la versión ya modificada, cual, dado el grafo $G$ en una representación de listas de adyacencias, se por cada nodo en una lista se referencia a una lista con las aristas adyacentes y otra lista vacia, las cuales se llamarán $aristas\_no\_usadas(v_k), aristas\_usadas(v_k)$.
+   
+   \textbf{Algoritmo modificado para ciclo hamiltoniano:}
+   
+   \textbf{Entrada:} Un grafo $G = (V,E)$ con $n$ vértices en forma de lista de adyacencia. 
+   
+   \textbf{Salida:} Un ciclo hamiltoniano, o una bandera de fracaso.
+   \begin{enumerate}
+   	\item Comenzar con un vértice aleatorio como la cabeza del camino $P$.
+   	\item Repetir los siguientes pasos hasta encontrar un ciclo hamiltoniano o que la lista de aristas no usadas de la cabeza del camino esté vacía.\begin{enumerate}
+   		\item Dejas que el camino simple $P=v_1, v_2, \dots,v_k$, con $v_k$ siendo la cabeza del camino.
+   		\item Ejecutar uno de los siguientes pasos con probabilidad de $1/n$, $|aristas\_usadas(v_k)|/n$, y $1-1/n-|aristas\_usadas(v_k)|/n$ respectivamente:\begin{enumerate}
+   			\item Invertir el camino, hacer $v_1$ la cabeza del camino.
+   			\item Escoger de manera aleatoria uniforme una arista de la lista de $aristas\_usadas(v_k)$. Si la arista tiene la forma $(v_k, v_i)$, realizar la rotación y asignar $v_{i+1}$ como la cabeza del camino. 
+   			\item  Seleccionar la primera arista de la lista $aristas\_usadas(v_k)$, llamarla $(v_k, u)$. Si $u \neq v_i, 1 \leq i \leq k$, añadir $u=v_{k+1}$ al camino y asignar como la cabeza del camino. Si $u = v_i$, hacer la rotación y asignar $v_{i+1}$ como la cabeza del camino. Este paso cierra el ciclo hamiltoniano cuando $k=n$ y la arista escogida es $(v_n, v_1)$.
+   		\end{enumerate}
+   		\item Actualizar las listas de aristas usadas y no usadas de cada vértice. 
+   	\end{enumerate} 
+   	\item Regresar el ciclo hamiltoniano si se encontró uno o una bandera de fracaso si no.
+   \end{enumerate}
+   Analizando en primer lugar el comportamiento aleatorio del algoritmo presente en le paso de ejecución 2-b. En el cual, con probabilidades dependientes del número de nodos y las aristas presentes en las lista de aristas usadas y no usadas del nodo cabeza, dónde se escogen comportamientos distintos para encontrar el ciclo hamiltoniano dentro del grafo. Cabe mencionar, que este análisis se comienza suponiendo que $G$ ha sido formado por un método como el de Erdös-Rényi en el cual, dado un nodo cualquiera de $n$, escoge aristas de las ${n\choose 2}$ con probabilidad de éxito $p$. De esto se obtiene el primer lema
+   \begin{lemma}
+   	 Suponga que el algoritmo modificado corre en un grafo generado por el modelo de Erdös-Rényi. Sea $V_t$ el nodo cabeza después del paso t-ésimo. Entonces, para cualquier nodo $u$, siempre y cuando el nodo cabeza tenga al menos una arista en la lista de $aristas\_no\_usadas(V_t)$ en paso t,
+   	\begin{equation*}
+   	\mathnormal{Pr}\left(V_{t+1}=u | V_t =u_t, V_{t-1}=u_{t-1}, \dots, V_0=u_0\right)
+   	\end{equation*}
+   	Esto es que el nodo cabeza puede ser pensado como un nodo que se escoge de manera aleatoria uniforme de todos los nodos a cada paso, sin importar los nodos que se hayan escogido previamente. 
+   \end{lemma}
+	La demostración de este lema se da por las probabilidades asignadas durante el diseño del algoritmo, usando el principio de decisiones diferidas, respecto al método de construcción del grafo. 
+  	Con el lema, el siguiente teorema tiene lugar 
+  	\begin{theorem}
+  		Suponga que la entrada al algoritmo modificado inicialmente tiene listas de aristas no usada dónde cada arista $(v,u)$ para $u\neq v$ es agregada al grafo de manera independiente con probabilidad $q \geq 20 \ln n / n$. Entonces el algoritmo puede encontrar de manera exitosa un ciclo hamiltoniano en $O(n\ln n)$ iteraciones del paso 2 del algoritmo con probabilidad de $1-O(n^{-1}).$
+  	\end{theorem}
+  \begin{proof}[Demostración]
+  La demostración de este teorema, se basa fundamentalmente en asignar cotas a los siguientes dos eventos:
+  \begin{itemize}
+  	\item $A$ El algoritmo se ejecuta $3n\ln n$ veces con todas las listas de $aristas\_no\_usadas$ con al menos un vértice, pero falla en encontrar un ciclo hamiltoniano.
+  	\item $B$ Al menos una de las listas de $aristas\_no\_usadas$ se vació durante las $3n \ln n$ iteraciones del bucle.  
+  \end{itemize}
+  El evento $A$ tiene una relación análoga directa con el problema del \textit{coleccionista de cupones} gracias al lema 1, en cuanto a la cota de iteraciones posibles para no encontrar uno de los nodos. La probabilidad que algún nodo en especifico no se haya encontrado entre $2n\ln n$ iteraciones es
+  \begin{equation*}
+  \left(1 - \frac{1}{n}\right)^{2n\ln n} \leq e^{-2\ln n} = \frac{1}{n^2}
+  \end{equation*}
+  Usando la cota de la unión para encontrar la probabilidad que cualquier nodo de los $n$ no se haya encontrado en esa cantidad de iteraciones resulta en a lo más $1/n$.
+  La siguiente parte del evento $A$, que se haya entrado un camino que contenga todos los vértices es necesario crear el ciclo para que sea un ciclo hamiltoniano. La probabilidad de no encontrar una arista que cierre el ciclo en $n\ln n$ iteraciones restantes es
+  \begin{equation*}
+  \left(1-\frac{1}{n}\right)^{n\ln n} \leq e^{-\ln n} = \frac{1}{n}
+  \end{equation*} 
+  Uniendo ambas probabilidades de los eventos da como resultado entonces que $\mathnormal{Pr}(A)\leq \frac{2}{n}$.
+  
+  La probabilidad del evento $B$ también se puede acotar identificando dos subeventos posibles, en los que se analiza las causas por las que las listas de aristas no usadas puedan estar vacías dentro de las $3n\ln n$ iteraciones del algoritmo.
+  \begin{enumerate}
+  	\item $B_1$ Al menos $9\ln n$ aristas fueron removidas de la lista de $aristas\_no\_usadas$ para al menos un nodo dentro de las $3n\ln n $ iteraciones del bucle.
+  	\item $B_2$ Al menos un nodo tiene menos de $10 \ln n$ aristas inicialmente en su lista de $aristas\_no\_usadas$. 
+  \end{enumerate}
+Identificando estos subeventos, es claro que para que $B$ pase, cualquiera de los dos debe ocurrir. Por lo tanto $\mathnormal{Pr}(B) \leq \mathnormal{Pr}(B_1)+\mathnormal{Pr}(B_2)$.
+
+Para el subevento $B_1$, se analiza las veces que un nodo $v$ sea la cabeza del camino. Dado, que cada iteración del algoritmo utiliza una arista de manera uniforme, y gracias al lema 1 se sabe que la probabilidad que el nodo $v$ sea la cabeza del camino es de $1/n$. Entonces, la cantidad de veces que $v$ será la cabeza del camino durante las primeras $3n\ln n $ iteraciones del algoritmo queda descrita por una distribución binomial $B(3n\ln n, 1/n)$, esta cantidad dicta cuantas aristas de $v$ se mueven a la lista de $aristas\_usadas(v)$. 
+Usando  una cota de Chernoff para la variable binomial anterior con los valores $\delta =2, \mu = E[v \mathtt{como\ cabeza\ del\ camino}] = 3\ln n$, se obtiene
+\begin{equation*}
+\mathnormal{Pr}(v \mathtt{como\ cabeza\ del\ camino} \geq 9\ln n)\leq \left(\frac{e^2}{(1+2)^(1+2)}\right)^{3\ln n} \leq \left(\frac{e^2}{27}\right)^{3\ln n}\leq \frac{1}{n^2}
+\end{equation*}
+Tomando la cota de la unión para todos los nodos del grafo, entonces se tiene que $\mathnormal{Pr}(B_1) \leq 1/n$.
+
+Mientras, el subevento $B_2$, el número esperado de aristas iniciales por cada nodo se puede describir por el valor esperado de una distribución binomial por nodo, y tomando la probabilidad $q$ del teorema entonces, $(n-1)q \geq ((n-1) 20 \ln n) / n \geq 19\ln n$ para $n$ suficientemente grandes. Usando otra cota de Chernoff para la probabilidad que un nodo tenga menos de $10 \ln n$ aristas en su configuración inicial, se tiene
+\begin{equation*}
+\mathnormal{Pr}(v \mathtt{\ aristas\ no\ usadas\ inicialmente}\leq 10\ln n)\leq e^{-(19\ln n)(9/19)^2/2} \leq \frac{1}{n^2}
+\end{equation*}
+de nuevo, tomando la cota de unión para todos los nodos del grafo, se tiene la probabilidad del evento $\mathnormal{Pr}(B_2)\leq 1/n$ para que cualquier nodo tenga menos de $10\ln n $ aristas no usadas iniciales.
+
+Esto resultado en la probabilidad total del evento $B$ suceda de $\mathnormal{Pr}(B) \leq \frac{2}{n}$.
+
+Considerando en total las probabilidades de los eventos $A,B$ que juntas determinan la probabilidad que el algoritmo falle en encontrar un ciclo hamiltoniano en $3n\ln n$ iteraciones es
+\begin{equation*}
+\mathnormal{Pr}(A)+\mathnormal{Pr}(B) \leq \frac{4}{n}
+\end{equation*}
+\end{proof}
+  
+\end{document}
