@@ -4,6 +4,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
 
 class UGraph:
     # Graphs are generated in adjacency lists. Each index of the list correpond to the same index of the node of the graph. And the contents of the list
@@ -17,13 +18,15 @@ class UGraph:
         self.nodes_len = n
         self.p = p
         self.nodes = []
-        self.G, self.G_deg = self.gen_random_graph(n,p)
+        # Unique random generator for the class
+        self.rg = rdm.Generator(rdm.SFC64())
+        self.G, self.G_deg = self.gen_random_graph(n,p,self.rg)
         self.index = 0
         self.convex = False
         if n == self.BFS(self.G):
             self.convex = True
 
-    def gen_random_graph(self, n, p):
+    def gen_random_graph(self, n, p, rg):
         G = []
         cards = [] # Cardinality of each nodes or degree
         self.nodes = [i for i in range(n)]
@@ -34,7 +37,7 @@ class UGraph:
             for i in self.nodes:
                 if i == node:
                     None # No autoconnections allowed
-                elif p >= rdm.random_sample():
+                elif p >= rg.uniform():
                     new_edges.append(i)
                     card += 1
             G.append(new_edges)
@@ -53,10 +56,15 @@ class UGraph:
     # Returning the actual node, the nodes where it goes to and the degree of those
     def __repr__(self):
         return 'Undirected graph with {0} nodes. Convexity {1}'.format(self.nodes_len,self.convex)
+    
+    def __del__(self):
+        # Deleting object
+        return None
 
     @staticmethod
     def BFS(T, s=None, ls=None):
-        # T is the graph to discover. It can be feed as a adjacency list for indexes from 0 to nodes - 1
+        # T is the graph to discover. It can be feed as a 
+        # adjacency list for indexes from 0 to nodes - 1
         # S is the starting node, is None, then takes the first item of T
         # ls is the number of nodes
         if ls == None:
@@ -78,14 +86,36 @@ class UGraph:
             L = L_1
         return BFS_len
 
-def evaluate_graph(n, pr, i, workers):
-    with Pool(processes=workers) as p:
-        positives = p.map(evaluate_graph_sub, [(n,pr) for _ in range(i)])
-        p.close()
-        p.join()
-    positive = np.sum(positives)
-    print(pr, positive)
-    return positive/i
+def evaluate_graph(n, pr, iterations, workers=-1):
+    """
+    This function creates a random graph
+    with the arguments n, pr with the method
+    of Erdos-Renyi.
+    Then it evaluates if the graph is convex.
+    This repeats i times. Can be used in parallel
+    evaluations giving a certain number of workers.
+    Use workers = -1 to use all the available cpu 
+    threads to python.
+    """
+    parallel = True
+    if workers == 1:
+        parallel = False
+    elif (workers < 0) or (workers > os.cpu_count()):
+        workers = os.cpu_count()
+        parallel = True
+    if parallel:
+        P = Pool(processes=workers)
+        # Evaluating a sample in individual threads. As they are unrelated.
+        results = P.map(evaluate_graph_sub, [(n,pr) for _ in range(iterations)])
+        # Close the pool of processes
+        P.close()
+        P.join()
+    else:
+        # Single thread execution
+        results = [evaluate_graph_sub((n,pr)) for _ in range(iterations)]
+    positives = np.mean(results)
+    #print(pr, positives)
+    return positives
 
 def evaluate_graph_sub(SS):
     n, p = SS
@@ -94,16 +124,14 @@ def evaluate_graph_sub(SS):
         return 1
     else:
         return 0
-
-import os
-
+    
+# For in file tests.
 tests = []
 iterations = 10
 workers=os.cpu_count()
 n_test = np.linspace(10**3, 8*10**3, num=6, dtype=np.int32)
 p_test = np.linspace(0.001, 0.002, num=30)
 name_file = 'random_graphs_results.npy'
-
 
 if __name__ == '__main__':
     files = os.listdir()
